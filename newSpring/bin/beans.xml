@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	                              http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	                              http://www.springframework.org/schema/context
+	                              http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	                              http://www.springframework.org/schema/aop
+	                              http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+	                              "
+	default-autowire="no">
+	<bean id="BaseDao" class="cn.dao.impl.BaseDaoImpl" scope="prototype">
+	</bean>
+	<!-- 设值注入<bean id="ServiceDao" class="cn.service.impl.ServiceDaoImpl">
+	<property name="baseDao" ref="BaseDao"></property>
+	</bean> -->  
+	<!-- 构造器注入<bean id="ServiceDao" class="cn.service.impl.ServiceDaoImpl">
+	<constructor-arg name="baseDao" ref="BaseDao"></constructor-arg>
+	</bean>  -->	
+	<bean id="ServiceDao" class="cn.service.impl.ServiceDaoImpl">
+	</bean> 
+	<bean id="aspectDemo" class="cn.aspect.AspectDemo">
+	</bean>  
+	<aop:config>
+		<aop:aspect id="aspectDemoAop" ref="aspectDemo">
+			<aop:pointcut expression="execution(* cn.service.impl.ServiceDaoImpl.*(..))" id="aspectPointCut"/>
+			<aop:before method="before" pointcut-ref="aspectPointCut"/>
+			<aop:after-returning method="afterReturning" pointcut-ref="aspectPointCut"/>
+			<aop:after-throwing method="afterThrowing" pointcut-ref="aspectPointCut"/>
+			<aop:after method="after" pointcut-ref="aspectPointCut"/>
+			<aop:around method="around" pointcut-ref="aspectPointCut"/>
+		</aop:aspect>
+	</aop:config>
+</beans>
