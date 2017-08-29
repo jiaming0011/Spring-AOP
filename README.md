@@ -121,3 +121,72 @@ log4j:WARN Please initialize the log4j system properly.
 ### after-returing和after-throwing和after
 after-returing和after-throwing两者只能其中一个执行，若抛出异常则after-throwing，否则就after-returing，after则在两者之后执行，且与前两者是否执行无关。<br>
 round的话必须在方法里写ProceedingJoinPoint参数才能执行
+
+
+# Spring-IOC小结
+### Bean容器初始化的三种方式：
+* 本地文件<br>
+* ClassPath<br>
+* Web应用中依赖servlet或Listener<br>
+### Spring注入的两种方式：
+* 设值注入：
+```java
+<bean id="injectionService" class="com.imooc.ioc.injection.service.InjectionServiceImpl"> 
+      <property name="injectionDAO" ref="injectionDAO"></property> -->
+</bean>
+ <bean id="injectionDAO" class="com.imooc.ioc.injection.dao.InjectionDAOImpl"></bean>
+</beans>
+```
+* 构造注入：
+```java
+<bean id="injectionService" class="com.imooc.ioc.injection.service.InjectionServiceImpl">
+        <constructor-arg name="injectionDAO" ref="injectionDAO"></constructor-arg>
+ </bean>
+  <bean id="injectionDAO" class="com.imooc.ioc.injection.dao.InjectionDAOImpl"></bean>
+</beans>
+
+```
+### Bean的作用域：
+1、singleton:当一个bean的作用域为singleton, 那么Spring IoC容器中只会存在一个共享的bean实例，并且所有对bean的请求，只要id与该bean定义相匹配，则只会返回bean的同一实例。
+注意：Singleton作用域是Spring中的缺省作用域。要在XML中将bean定义成singleton，可以这样配置： 
+<bean id="empServiceImpl" class="cn.csdn.service.EmpServiceImpl" scope="singleton"><br>
+2、prototype：一个bean定义对应多个对象实例。Prototype作用域的bean会导致在每次对该bean请求（将其注入到另一个bean中，或者以程序的方式调用容器的getBean()方法）时都会创建一个新的bean实例。根据经验，对有状态的bean应该使用prototype作用域，而对无状态的bean则应该使用singleton作用域。<br>
+3、request：在一次HTTP请求中，一个bean定义对应一个实例；即每次HTTP请求将会有各自的bean实例， 它们依据某个bean定义创建而成。该作用域仅在基于web的Spring ApplicationContext情形下有效。
+考虑下面bean定义：
+<bean id="loginAction" class=cn.csdn.LoginAction" scope="request"/>
+针对每次HTTP请求，Spring容器会根据loginAction bean定义创建一个全新的LoginAction bean实例， 且该loginAction bean实例仅在当前HTTP request内有效，因此可以根据需要放心的更改所建实例的内部状态， 而其他请求中根据loginAction bean定义创建的实例，将不会看到这些特定于某个请求的状态变化。 当处理请求结束，request作用域的bean实例将被销毁。<br>
+4、session：在一个HTTP Session中，一个bean定义对应一个实例。该作用域仅在基于web的Spring ApplicationContext情形下有效。
+考虑下面bean定义：
+<bean id="userPreferences" class="com.foo.UserPreferences" scope="session"/>
+针对某个HTTP Session，Spring容器会根据userPreferences bean定义创建一个全新的userPreferences bean实例， 且该userPreferences bean仅在当前HTTP Session内有效。 与request作用域一样，你可以根据需要放心的更改所创建实例的内部状态，而别的HTTP Session中根据userPreferences创建的实例， 将不会看到这些特定于某个HTTP Session的状态变化。 当HTTP Session最终被废弃的时候，在该HTTP Session作用域内的bean也会被废弃掉。<br>
+5、global session：在一个全局的HTTP Session中，一个bean定义对应一个实例。典型情况下，仅在使用portlet context的时候有效。该作用域仅在基于web的Spring ApplicationContext情形下有效。<br>
+### Bean的生命周期
+*定义
+*初始化
+*使用
+*销毁
+Bean初始化/销毁的三种方法：<br>
+（1）通过实现 InitializingBean/DisposableBean 接口来定制初始化之后/销毁之前的操作方法；要覆盖相应的方法
+
+（2）通过 <bean> 元素的 init-method/destroy-method属性指定初始化之后 /销毁之前调用的操作方法；
+
+（3）还有一种是
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd" 
+      default-init-method="defautInit" default-destroy-method="defaultDestroy">
+```
+这三种方法的执行顺序是（1）>（2）但（1）或者（2）实现的时候（3）不会实现，而且（3）可以有定义而没方法，但（2）只要定义了方法名就一定要在相应的类中写方法
+### Spring自动装配
+No:不做任何操作<br>
+ByName：根据属性名自动装配。此选项将检查容器并根据名字查找与属性完全一致的bean，并将其与属性自动装配。<br>
+ByType：如果容器中存在一个预指定属性类型相同的bean，那么将于该属性自动装配，并不考虑ID，如果存在多个该类型的bean，抛出异常，找不到相匹配的则什么事都不会发生<br>
+Consyructor：与ByType方式类似，不同之处在于她应用于构造器参数，如果容器中没有找到与构造器参数类型一致的bean，那么抛出异常。<br>
+即不必在bean属性下写property属性或者constructor-arg属性，只需在beans xmlns定义default-autowire即可。
+
+
+
+
