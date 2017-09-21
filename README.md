@@ -180,6 +180,10 @@ Bean初始化/销毁的三种方法：<br>
       default-init-method="defautInit" default-destroy-method="defaultDestroy">
 ```
 这三种方法的执行顺序是（1）>（2）但（1）或者（2）实现的时候（3）不会实现，而且（3）可以有定义而没方法，但（2）只要定义了方法名就一定要在相应的类中写方法
+### Spring容器为什么要设置单例：
+理由很简单，一方面spring容器在初始化时就实例化了bean类，提高了效率，另一方面也能大大的减少内存开销，但仍然存在一些问题：<br>
+比如在Controller类中如果设置了非final类型修饰全局变量的话，可能会出现线程安全问题，这个时候通过注解@Scope("prototype")来把Controller类设置为原型模式。
+
 ### Spring自动装配
 No:不做任何操作<br>
 ByName：根据属性名自动装配。此选项将检查容器并根据名字查找与属性完全一致的bean，并将其与属性自动装配。<br>
