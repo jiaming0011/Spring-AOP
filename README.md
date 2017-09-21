@@ -135,7 +135,64 @@ round的话必须在方法里写ProceedingJoinPoint参数才能执行
 　　定义在pointcutexp包和所有子包里的JoinPointObjP2类的任意方法的执行：<br>
 　　　　execution(* com.test.spring.aop.pointcutexp..JoinPointObjP2.*(..))")<br>
 ### Spring声明式事务管理
-声明式事务管理是建立在AOP的基础之上的，其本质是对方法前后进行拦截，然后在目标方法开始之前创建或者加入一个事务，在执行完目标方法之后根据执行情况提交或者回滚事务。声明式事务最大的优点就是不需要通过编程的方式管理事务，这样就不需要在业务逻辑代码中掺杂事务管理的代码，只需在配置文件中做相关的事务规则声明(或通过基于@Transactional注解的方式)，便可以将事务规则应用到业务逻辑中。
+声明式事务管理是建立在AOP的基础之上的，其本质是对方法前后进行拦截，然后在目标方法开始之前创建或者加入一个事务，在执行完目标方法之后根据执行情况提交或者回滚事务。声明式事务最大的优点就是不需要通过编程的方式管理事务，这样就不需要在业务逻辑代码中掺杂事务管理的代码，只需在配置文件中做相关的事务规则声明(或通过基于@Transactional注解的方式)，便可以将事务规则应用到业务逻辑中。<br>
+Spring配置文件加入如下配置
+```java
+<!-- Spring事务管理 -->
+	<bean id="txDao" class="cn.spring.dao.impl.TxDaoImpl">
+		<property name="jdbcTemplate" ref="jdbcTemplate"></property>
+	</bean>
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">  
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />  
+        <property name="url" value="jdbc:mysql://localhost:3306/test?characterEncoding=utf-8" />  
+        <property name="username" value="root" />  
+        <property name="password" value="123456" />  
+        </bean>  
+	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">  
+    	<property name="dataSource" ref="dataSource" />  
+	</bean> 
+			
+	<tx:advice id="advice" transaction-manager="transactionManager">  
+	    <tx:attributes>  
+	        <tx:method name="*"  rollback-for="Exception"/>   
+	    </tx:attributes>  
+	</tx:advice>    
+	<aop:config>  
+	    <aop:pointcut id="testService" expression="execution (* cn.spring.dao.impl.TxDaoImpl.*(..))"/>  
+	    <aop:advisor advice-ref="advice" pointcut-ref="testService"/>  
+	</aop:config>  
+```
+TxDaoImpl：
+```java
+package cn.spring.dao.impl;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
+
+public class TxDaoImpl {
+
+	private JdbcTemplate jdbcTemplate;
+	public JdbcTemplate getJdbcTemplate() {  
+        return jdbcTemplate;  
+    }  
+  
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {  
+        this.jdbcTemplate = jdbcTemplate;  
+    }  
+	
+	public void execute() throws Exception{
+		
+			String sql = "INSERT INTO aaa(number) VALUES(?)"; 
+		    for(int i=1;i<=20;i++){  
+		    jdbcTemplate.update(sql,i);  
+		    if(i==8) throw new Exception();  
+		    }  
+		 
+		
+	}
+}
+```
+当执行到第八条插入语句时显然会抛出异常，此时事务发生回滚，数据库中将不会有任何新添加的数据
 
 
 
