@@ -19,12 +19,12 @@ AOP:面向切面编程，通过预编译方式和运行期动态代理实现程�
 AOP代理（AOP Proxy）  | Aop框架创建的对象，用来实现切面契约 |
 织入（Weaving）  | 把切面连接到其他的应用程序类型或者对象上，并且创建一个被通知的对象，分为<br>编译时织入，类加载时织入，执行时织入 |
 ### AOP术语通俗解释
-* 通知、增强处理（Advice） 就是你想要的功能，也就是上说的安全、事物、日子等。你给先定义好，然后再想用的地方用一下。包含Aspect的一段处理代码
-* 连接点（JoinPoint） 这个就更好解释了，就是spring允许你是通知（Advice）的地方，那可就真多了，基本每个方法的钱、后（两者都有也行），或抛出异常是时都可以是连接点，spring只支持方法连接点。其他如AspectJ还可以让你在构造器或属性注入时都行，不过那不是咱们关注的，只要记住，和方法有关的前前后后都是连接点。
+* 通知、增强处理（Advice） 就是切面里面所有定义的方法
+* 连接点（JoinPoint） 这个就更好解释了，就是spring允许你是通知（Advice）的地方，那可就真多了，基本每个方法的前、后（两者都有也行），或抛出异常是时都可以是连接点，spring只支持方法连接点。
 * 切入点（Pointcut） 上面说的连接点的基础上，来定义切入点，你的一个类里，有15个方法，那就有十几个连接点了对吧，但是你并不想在所有方法附件都使用通知（使用叫织入，下面再说），你只是想让其中几个，在调用这几个方法之前、之后或者抛出异常时干点什么，那么就用切入点来定义这几个方法，让切点来筛选连接点，选中那几个你想要的方法。
 * 切面（Aspect） 切面是通知和切入点的结合。现在发现了吧，没连接点什么事，链接点就是为了让你好理解切点搞出来的，明白这个概念就行了。通知说明了干什么和什么时候干（什么时候通过方法名中的befor，after，around等就能知道），二切入点说明了在哪干（指定到底是哪个方法），这就是一个完整的切面定义。
 * 引入（introduction） 允许我们向现有的类添加新方法属性。这不就是把切面（也就是新方法属性：通知定义的）用到目标类中吗
-* 目标（target） 引入中所提到的目标类，也就是要被通知的对象，也就是真正的业务逻辑，他可以在毫不知情的情况下，被咋们织入切面。二自己专注于业务本身的逻辑。
+* 目标（target） 引入中所提到的目标类，也就是要被通知的对象，也就是真正的业务逻辑，他可以在毫不知情的情况下，被咱们织入切面。二自己专注于业务本身的逻辑。
 * 代理（proxy） 怎么实现整套AOP机制的，都是通过代理。
 * 织入（weaving） 把切面应用到目标对象来创建新的代理对象的过程。有三种方式，spring采用的是运行时。
 * 目标对象 – 项目原始的Java组件。
@@ -121,6 +121,22 @@ log4j:WARN Please initialize the log4j system properly.
 ### after-returing和after-throwing和after
 after-returing和after-throwing两者只能其中一个执行，若抛出异常则after-throwing，否则就after-returing，after则在两者之后执行，且与前两者是否执行无关。<br>
 round的话必须在方法里写ProceedingJoinPoint参数才能执行
+### execution表达式例子如下：
+任意公共方法的执行：<br>
+　　　　execution(public * *(..))<br>
+　　任何一个以“set”开始的方法的执行：<br>
+　　　　execution(* set*(..))<br>
+　　AccountService 接口的任意方法的执行：<br>
+　　　　execution(* com.xyz.service.AccountService.*(..))<br>
+　　定义在service包里的任意方法的执行：<br>
+　　　　execution(* com.xyz.service.*.*(..))<br>
+　　定义在service包和所有子包里的任意类的任意方法的执行：<br>
+　　　　execution(* com.xyz.service..*.*(..))<br>
+　　定义在pointcutexp包和所有子包里的JoinPointObjP2类的任意方法的执行：<br>
+　　　　execution(* com.test.spring.aop.pointcutexp..JoinPointObjP2.*(..))")<br>
+### Spring声明式事务管理
+声明式事务管理是建立在AOP的基础之上的，其本质是对方法前后进行拦截，然后在目标方法开始之前创建或者加入一个事务，在执行完目标方法之后根据执行情况提交或者回滚事务。声明式事务最大的优点就是不需要通过编程的方式管理事务，这样就不需要在业务逻辑代码中掺杂事务管理的代码，只需在配置文件中做相关的事务规则声明(或通过基于@Transactional注解的方式)，便可以将事务规则应用到业务逻辑中。
+
 
 
 # Spring-IOC小结
@@ -161,10 +177,10 @@ round的话必须在方法里写ProceedingJoinPoint参数才能执行
 针对某个HTTP Session，Spring容器会根据userPreferences bean定义创建一个全新的userPreferences bean实例， 且该userPreferences bean仅在当前HTTP Session内有效。 与request作用域一样，你可以根据需要放心的更改所创建实例的内部状态，而别的HTTP Session中根据userPreferences创建的实例， 将不会看到这些特定于某个HTTP Session的状态变化。 当HTTP Session最终被废弃的时候，在该HTTP Session作用域内的bean也会被废弃掉。<br>
 5、global session：在一个全局的HTTP Session中，一个bean定义对应一个实例。典型情况下，仅在使用portlet context的时候有效。该作用域仅在基于web的Spring ApplicationContext情形下有效。<br>
 ### Bean的生命周期
-*定义
-*初始化
-*使用
-*销毁
+* 定义
+* 初始化
+* 使用
+* 销毁<br>
 Bean初始化/销毁的三种方法：<br>
 （1）通过实现 InitializingBean/DisposableBean 接口来定制初始化之后/销毁之前的操作方法；要覆盖相应的方法
 
@@ -188,8 +204,9 @@ Bean初始化/销毁的三种方法：<br>
 No:不做任何操作<br>
 ByName：根据属性名自动装配。此选项将检查容器并根据名字查找与属性完全一致的bean，并将其与属性自动装配。<br>
 ByType：如果容器中存在一个预指定属性类型相同的bean，那么将于该属性自动装配，并不考虑ID，如果存在多个该类型的bean，抛出异常，找不到相匹配的则什么事都不会发生<br>
-Consyructor：与ByType方式类似，不同之处在于她应用于构造器参数，如果容器中没有找到与构造器参数类型一致的bean，那么抛出异常。<br>
-即不必在bean属性下写property属性或者constructor-arg属性，只需在beans xmlns定义default-autowire即可。
+constructor：与ByType方式类似，不同之处在于她应用于构造器参数，如果容器中没有找到与构造器参数类型一致的bean，那么抛出异常。<br>
+即不必在bean属性下写property属性或者constructor-arg属性，只需在beans xmlns定义default-autowire即可。<br>
+注意byName和byType都是通过set方法设值注入的，constructor通过构造器注入，记住要写出原本类的默认构造方法
 
 
 
