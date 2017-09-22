@@ -265,6 +265,85 @@ constructor：与ByType方式类似，不同之处在于她应用于构造器参
 即不必在bean属性下写property属性或者constructor-arg属性，只需在beans xmlns定义default-autowire即可。<br>
 注意byName和byType都是通过set方法设值注入的，constructor通过构造器注入，记住要写出原本类的默认构造方法
 
+# Spring事务
+## 什么是事务？
+首先我们要了解一下并发控制，并发控制是指多个用户同时更新运行时，用于保护数据库完整性的各种技术。简单的讲是为了保证一个用户的操作不会对另外一个用户的操作造成不利的影响。而事务，就是并发控制的基本单位。是用户定义的一个操作序列。这些操作要么全做，要么全不做，是一个不可分割的工作单位。
+事务通常以begin transaction开始，以commit和rollback结束。
+事务的特性（ACID）
+A.	原子性（Atonicity）
+要么全做，要么不做
+B.	一致性（Consistency）
+事务的执行结果要使数据库从一个一致性状态变成另一个一致性状态
+C.	隔离性（Isolation）
+一个事务的执行不能被其他事务干扰
+D.	持续性/永久性（Durability）
+一个事务一旦提交，他对数据库中数据的改变应该是永久性的
+事务并发引起的问题
+1.	脏读
+在事务未commit前进行查询
+2.	不可重复读
+有两次查询，事务B有一次修改操作，顺序是A第一次查询-->B修改，comiitB第二次查询发现数据不一样
+3.	幻读
+事务A有两次查询数据量（聚合函数），事务B有一次添加或删除操作，顺序是A第一次查询-->B修改，comiitB第二次查询发现数据不一样
+4.	第一类丢失更新(lost update)： 在完全未隔离事务的情况下，两个事务更新同一条数据资源，某一事物异常终止，回滚造成第一个完成的更新也同时丢失。
+5.	第二类丢失更新(second lost updates)：是不可重复读的特殊情况，如果两个事务都读取同一行，然后两个都进行写操作，并提交，第一个事务所做的改变就会丢失。
+
+## 事务的隔离级别
+Mysql数据库给我们提供的四种隔离级别：
+1.	Serializable（串行化）：可避免脏读，不可重复读，幻读的发生。但是性能极差，一般不会这么用。
+2.	Repeatable read（可重复读）：可以避免脏读，不可重复读的发生。（mysql默认）
+3.	Read commited（读已经提交）：可避免脏读的发生
+4.	Read uncommitted（读未提交）：最低级别，任何情况都无法保证。
+
+
+## 事务的传播行为
+我的感觉是：一个被定义为事务的方法A在执行的过程中，去调用了另一个被定义为事务的方法B，此时方法B的事务是该新建，还是嵌入方法A事务，这就是事务传播行为去定义的。
+	Propagation_required: 如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务。这是默认值。<br>
+	Propagation_requires_new:创建一个新的事务，如果当前存在事务，则将其高高挂起<br>
+	Propagation_supports:如果当前存在事务，则加入该事务，如果当前没有事务，则以非事务的方式继续运行<br>
+	Propagation_not_supported:以非事务方式运行，如果当前存在事务，则把事务高高挂起。<br>
+	Propagation_never:以非事务方式运行，如果当前存在事务，抛异常<br>
+	Propagation_mandatory:如果当前存在事务，则加入该事务，如果当前没有事务，抛异常<br>
+	Propagation_nested:如果当前存在事务，则创建一个事务作为当前事务的嵌套事务来运行；如果当前没有事务，则该取值等价于TransactionDefinition.PROPAGATION_REQUIRED。<br>
+
+疑难杂点：
+	Required事务A和事务B只要有一处发生异常都会回滚<br>
+	Requires_new：假设事务A调用事务B，事务B抛出异常，那么事务B肯定回滚，但是如果此时事务A去捕获这个异常，那么事务A还是可以正常commit的<br>
+	Nested：Nested的事务和他的父事务是相依的，他的提交是要等和他的父事务一块提交的。也就是说，如果父事务最后回滚，他也要回滚的。
+## Spring事务
+Spring事务解决了全局事务和本地事务的缺陷，支持编程式事务管理和声明式事务管理。
+声明式事务管理又分为两大部分：
+1.	基于xml配置的事务管理
+2.	注解
+
+第一点昨天已经做了一个demo，今天做第二点有关的demo
+先讲一些有关注解的基本配置：
+@Component，@Service，@Controller功能相同，字面含义不同，方便开发者了解这是哪一个类，都是在类名上面添加，表明这个类的实例化交给Spring容器去托管
+
+@Autowired和@Resource
+这两个意思都是在某一个类中注入其他类的实例，一般都写在类属性的前面，其中@Autowired是用byType自动注入，@Resource默认是用byName，也可以用byType
+
+
+@PostConstruct和@PreDestroy	，这两个只能应用于方法上，标注了 @PostConstruct 注释的方法将在类实例化后调用，而标注了 @PreDestroy 的方法将在类销毁之前调用。
+
+@Scope指定bean作用域范围
+@Transactional()事务注解
+一些比较常用的属性：
+1.	rollbackFor：设置哪些异常会执行回滚
+
+2.	noRollbackFor:设置抛出哪些异常不会执行回滚
+
+3.	timeout：事务超时间设置
+
+4.	isolation：可选的事务隔离级别设置：默认为数据源的默认隔离级别
+
+5.	propagation：可选的事务传播行为设置：默认为required
+
+6.	readOnly：读写或者只读事务，默认读写
+
+如果全部都是读取操作的话，可以设置为只读事务，这是一个优化的提示，在一些情况下，一些事务策略能够起到显著的最优化效果，例如在使用Object/Relational映射工具（如：Hibernate或TopLink）时避免dirty checking（试图“刷新”）。
+
+
 
 
 
